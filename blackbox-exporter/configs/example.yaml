@@ -1,0 +1,21 @@
+# https://github.com/prometheus/blackbox_exporter/blob/master/example.yml
+# https://github.com/prometheus-community/helm-charts/blob/main/charts/prometheus/values.yaml#L1839-L1841
+
+# DONOT MODIFY THE LAST LINE: replacement: it is <prometheus-service>.<namespace>:<service-port>
+
+extraScrapeConfigs: |
+  - job_name: 'prometheus-blackbox-exporter'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+        - https://example.com 
+        - https://my-awesome-server.io 
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: prometheus-blackbox-exporter.prometheus:9115

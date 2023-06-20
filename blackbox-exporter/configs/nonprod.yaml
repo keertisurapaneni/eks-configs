@@ -1,0 +1,163 @@
+# Account: 123456789012
+extraScrapeConfigs: |
+  - job_name: 'apex-urls'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+        - https://xyz.com
+        - https://tripbuilder.abc.io
+        - https://abc.io
+        - https://abc.tripbuilder.io
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: prometheus-blackbox-exporter.prometheus:9115
+  - job_name: 'custom-health-check-1'
+    metrics_path: /probe
+    params:
+      module: [custom_health_check_1]
+    static_configs:
+      - targets:
+        - http://sabc.xyz.com/www-cert
+        - http://sabc.xyz.com/dispatch-redis
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: prometheus-blackbox-exporter.prometheus:9115
+  - job_name: 'abc'
+    metrics_path: /probe
+    params:
+      module: [fail_if_redirect]
+    static_configs:
+      - targets:
+        - https://www.abc.io
+        - https://sidetrack.abc.io/
+        - https://www.abc.io/argentina
+        - https://www.abc.io/auth/sign-in
+        - https://www.abc.io/contact-us
+        - https://www.abc.io/destinations
+        - https://www.abc.io/egypt
+        - https://www.abc.io/nepal
+        - https://www.abc.io/our-commitments
+        - https://www.abc.io/privacy-policy
+        - https://www.abc.io/request-to-travel
+        - https://sidetrack.abc.io/brand-question-and-answer/
+        - https://sidetrack.abc.io/faq-3/
+        - https://sidetrack.abc.io/press-kit/
+        - https://www.abc.io/small-group-trips
+        - https://www.abc.io/spain
+        - https://www.abc.io/terms-of-use
+        - https://www.abc.io/we-are
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: prometheus-blackbox-exporter.prometheus:9115
+  - job_name: 'xyz'
+    metrics_path: /probe
+    params:
+      module: [fail_if_redirect]
+    static_configs:
+      - targets:
+        - https://www.xyz.com
+        - https://www.xyz.com/asia
+        - https://shop.xyz.com
+        - https://www.xyz.com/articles/category/adventure-travel
+        - https://www.xyz.com/
+        - https://www.xyz.com/guides
+        - https://www.xyz.com/best-in-travel
+        - https://www.xyz.com/kids
+        - https://www.xyz.com/legal
+        - https://www.xyz.com/legal/cookies
+        - https://www.xyz.com/legal/corporate-entities
+        - https://www.xyz.com/legal/intellectual-property
+        - https://www.xyz.com/legal/modern-slavery-act-statement
+        - https://www.xyz.com/legal/website-terms
+        - https://www.xyz.com/legal/whistleblower-policy-aus
+        - https://www.xyz.com/news
+        - https://www.xyz.com/partner
+        - https://www.xyz.com/places
+        - https://www.xyz.com/trade
+        - https://www.xyz.com/usa/tennessee/franklin/restaurants/big-shake-s-hot-chicken-fish/a/poi-eat/1534563/1340407
+        - https://www.xyz.com/stories/qatar-boundaryless-dining/
+        - https://www.xyz.com/stories/look-inside-qatar-national-library/
+        - https://www.xyz.com/stories/qatars-museums-culture/
+        - https://www.xyz.com/stories/top-autumn-experiences-ottawa/
+        - https://www.xyz.com/stories/graz-austria-christmas-wonderland-2/
+        - https://www.xyz.com/health-safety
+        - https://www.xyz.com/portugal/health-safety
+        - https://www.xyz.com/search
+        - https://www.xyz.com/newsletter
+        - https://www.xyz.com/kids/first-words
+        - https://www.xyz.com/authors/sasha-brady
+        - https://www.xyz.com/articles
+        - https://www.xyz.com/articles/best-places-to-visit-in-new-zealand
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: prometheus-blackbox-exporter.prometheus:9115
+  - job_name: 'external'
+    metrics_path: /probe
+    params:
+      module: [fail_if_redirect]
+    static_configs:
+      - targets:
+        - https://api.nws.ai/stories/1288492509/qatars-museums-culture/
+        - https://api.nws.ai/stories/1288492509/graz-austria-christmas-wonderland-2/
+        - https://api.nws.ai/stories/1288492509/top-autumn-experiences-ottawa/
+        - https://api.nws.ai/stories/1288492509/qatar-boundaryless-dining/
+        - https://api.nws.ai/stories/1288492509/qatar-boundaryless-dining/
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: prometheus-blackbox-exporter.prometheus:9115
+
+serverFiles:
+  alerting_rules.yml: 
+    groups:
+    - name: LP-alerts
+      rules:
+      - alert: ServiceDown
+        # We can also change this to alert for specific jobs: probe_success{job="abc"} == 0 or probe_success{job="abc"} == 0
+        expr: probe_success != 1
+        for: 5m
+        labels:
+          severity: page
+          priority: P1
+        annotations:
+          summary: "Endpoints are down"
+          description: "Endpoint {{ $labels.instance }} is unresponsive for more than 5m"  
+      - alert: Redirect - warning
+        expr: probe_http_redirects{job=abc} == 1 or probe_http_redirects{job=abc} == 1 or probe_http_redirects{job=custom-health-check-1} == 1
+        for: 5m
+        labels:
+          severity: warning
+          priority: P1
+        annotations:
+          summary: "Endpoint redirects - yes"
+          description: "Endpoint {{ $labels.instance }} redirects for more than 5m"
+      # - alert: Redirect - critical
+      #   expr: probe_http_redirects{job=apex-urls} == 1
+      #   for: 5m
+      #   labels:
+      #     severity: critical
+      #     priority: Page
+      #   annotations:
+      #     summary: "Endpoint redirects - yes"
+      #     description: "Endpoint {{ $labels.instance }} redirects for more than 5m"

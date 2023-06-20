@@ -1,0 +1,35 @@
+serviceAccounts:
+# Enable alert manager role
+  alertmanager:
+    create: true
+# Enable alert manager
+alertmanager:
+  enabled: true
+  persistentVolume:
+    enabled: true
+    existingClaim: storage-volume-prometheus-for-amp-server-0
+# https://yitaek.medium.com/practical-monitoring-with-prometheus-grafana-part-ii-5020be20ebf6
+# Updates prometheus-alertmanager configmap
+alertmanagerFiles:
+  alertmanager.yml:
+    # receivers:
+    #   - name: slack
+    #     slack_configs:
+    #       - channel: "#eks-alerts"
+    #         api_url: "https://xyz"
+    #         username: "Blackbox Monitor"
+    #         fallback: "Blackbox Monitor - {{ .CommonAnnotations.summary }}"
+    #         title: "{{ range .Alerts }}{{ .Annotations.summary }}\n{{ end }}"
+    #         send_resolved: true
+    #         text: |-
+    #           {{ range .Alerts }}
+    #             *Alert:* {{ .Annotations.summary }} - `{{ .Labels.severity }}`
+    #             *Description:* {{ .Annotations.description }}
+    #             *Dashboard:* {{ .Annotations.dashboard }}
+    #           {{ end }}
+    route:
+      group_by: ['alertname','job']
+      group_wait: 10s
+      group_interval: 5m
+      receiver: slack
+      repeat_interval: 8h
